@@ -277,9 +277,11 @@ README.md
 
 ## Clone Repository
 
-git clone <repo_url>
+## Clone Repository
 
-cd project
+git clone https://github.com/k-dinakaran/simple-rag.git
+
+cd simple-rag
 
 ---
 
