@@ -1,30 +1,33 @@
-# RAG Document Question Answering API
+# Enterprise RAG Document Question Answering System
 
-A production-style Retrieval-Augmented Generation (RAG) system built using FastAPI that allows users to upload documents and ask questions based on those documents.
+A production‑grade Retrieval Augmented Generation (RAG) system built using FastAPI, Streamlit, Redis, and ChromaDB. This system allows users to upload documents and ask questions with real‑time streaming responses, observability, caching, and latency tracking.
 
 ---
 
 # Overview
 
-This project implements a complete end-to-end RAG pipeline:
+This project implements a complete enterprise‑level RAG pipeline:
 
-Upload Documents → Chunk → Embed → Store → Retrieve → Rerank → Generate Answer
+Upload Documents → Chunk → Embed → Store → Retrieve → Generate → Stream Response → Cache
 
-The system supports:
+Key Features:
 
-* PDF and TXT document ingestion
-* Semantic chunking
-* Vector similarity search
-* Reranking for improved retrieval
-* LLM-based answer generation
-* Observability and latency tracking
-* FastAPI API endpoints
+• PDF and TXT ingestion
+• Semantic chunking
+• Vector similarity search
+• Real‑time streaming responses
+• Redis caching layer
+• Observability dashboard
+• Latency telemetry
+• Parallel pipeline execution
+• Production‑ready FastAPI backend
+• Streamlit observability dashboard
 
 ---
 
-# Architecture
+# System Architecture
 
-System Flow:
+## High Level Flow
 
 User Upload Document
 ↓
@@ -38,13 +41,17 @@ Vector Store (ChromaDB)
 ↓
 User Query
 ↓
+Cache Lookup (Redis)
+↓
 Query Embedding
 ↓
-Similarity Search (Top 10)
+Similarity Search (Top‑K)
 ↓
-Reranking (Top 3)
+LLM (Gemini 2.5 Flash Streaming)
 ↓
-LLM (Gemini 2.5 Flash)
+Streaming Response
+↓
+Cache Store
 ↓
 Final Answer + Metrics
 
@@ -58,31 +65,14 @@ Model: sentence-transformers/all-MiniLM-L6-v2
 
 Purpose:
 
-* Convert document chunks into embeddings
-* Convert query into embeddings
+• Convert document chunks into embeddings
+• Convert queries into embeddings
 
 Why Chosen:
 
-* Lightweight
-* Fast
-* Good retrieval quality
-
----
-
-## Reranking Model
-
-Model: cross-encoder/ms-marco-MiniLM-L-6-v2
-
-Purpose:
-
-* Improve retrieval quality
-* Rank most relevant chunks
-
-Why Chosen:
-
-* Lightweight
-* High accuracy
-* Fast inference
+• Lightweight
+• Fast inference
+• Good retrieval performance
 
 ---
 
@@ -92,13 +82,15 @@ Model: Gemini 2.5 Flash
 
 Purpose:
 
-* Generate answers from retrieved context
+• Generate answers from retrieved context
+• Streaming token responses
 
 Why Chosen:
 
-* Fast latency
-* Low cost
-* Strong reasoning
+• Low latency
+• Cost efficient
+• Streaming support
+• Strong reasoning
 
 ---
 
@@ -108,35 +100,58 @@ ChromaDB
 
 Purpose:
 
-* Store embeddings
-* Perform similarity search
+• Store embeddings
+• Perform similarity search
 
 Why Chosen:
 
-* Lightweight
-* Persistent storage
-* Easy integration
+• Lightweight
+• Persistent storage
+• Easy integration
+
+---
+
+# Cache Layer
+
+Redis Cache
+
+Purpose:
+
+• Reduce repeated queries
+• Improve latency
+• Production scalability
+
+Cache Strategy:
+
+• Query hash key
+• TTL: 1 hour
+• Cache hit bypasses full pipeline
+
+Example:
+
+Cache Hit Flow:
+
+Query → Cache Hit → Return Response
+
+Cache Miss Flow:
+
+Query → Full Pipeline → Store Cache → Return Response
 
 ---
 
 # Chunking Strategy
 
-We used semantic chunking.
+Semantic Chunking
 
-Chunk Size Strategy:
+Configuration:
 
-* FAQs → 128–256 tokens
-* Technical docs → 256–512 tokens
-* Legal docs → 512–1024 tokens
-
-Chosen for this project:
-
-* Chunk Size: 400
-* Overlap: 50
+• Chunk Size: 400
+• Overlap: 50
 
 Reason:
 
-* Balance between retrieval accuracy and context preservation
+• Better context preservation
+• Improved retrieval accuracy
 
 ---
 
@@ -144,31 +159,49 @@ Reason:
 
 Query
 ↓
+Cache Lookup
+↓
 Embedding
 ↓
-Similarity Search (Top 10)
-↓
-Deduplication
-↓
-Reranking
-↓
-Top 3 chunks
+Similarity Search (Top‑3)
 ↓
 LLM Generation
+↓
+Streaming Response
+
+---
+
+# Streaming Architecture
+
+Real‑time streaming implemented using:
+
+• FastAPI StreamingResponse
+• NDJSON streaming
+• Streamlit live rendering
+
+Streaming Flow:
+
+User Query
+↓
+Streaming Start
+↓
+Token Streaming
+↓
+Streaming Complete
 
 ---
 
 # Observability
 
-We implemented structured logging and latency tracking.
+Structured Logging Implemented
 
 Tracked Metrics:
 
-* embedding_time
-* retrieval_time
-* reranking_time
-* generation_time
-* total_time
+• embedding_time
+• retrieval_time
+• generation_time
+• total_time
+• cache_hit
 
 Example Response:
 
@@ -178,11 +211,22 @@ Example Response:
 "metrics": {
 "embedding_time": 0.02,
 "retrieval_time": 0.01,
-"reranking_time": 0.04,
-"generation_time": 0.80,
-"total_time": 0.87
+"generation_time": 1.2,
+"total_time": 1.23
 }
 }
+
+---
+
+# Observability Dashboard
+
+Streamlit Dashboard Includes:
+
+• Real‑time streaming answer
+• Retrieved chunks visualization
+• Metrics telemetry
+• Cache hit indicator
+• JSON logs viewer
 
 ---
 
@@ -196,7 +240,7 @@ Upload PDF or TXT file
 
 Example:
 
-curl -X POST "http://127.0.0.1:8000/upload" 
+curl -X POST "[http://127.0.0.1:8000/upload](http://127.0.0.1:8000/upload)" 
 -F "file=@document.pdf"
 
 ---
@@ -211,13 +255,10 @@ Request:
 "query": "What is the company leave policy?"
 }
 
-Response:
+Streaming Response:
 
-{
-"answer": "...",
-"retrieved_chunks": [...],
-"metrics": {...}
-}
+• Real‑time token streaming
+• Final metrics returned
 
 ---
 
@@ -235,25 +276,25 @@ Response:
 
 # Background Ingestion
 
-We implemented background ingestion using FastAPI BackgroundTasks.
+Implemented using FastAPI BackgroundTasks
 
 Steps:
 
-* Load document
-* Chunk document
-* Generate embeddings
-* Store embeddings
-
-This prevents blocking API requests.
+• Load document
+• Chunk document
+• Generate embeddings
+• Store embeddings
 
 ---
 
-# Rate Limiting
+# Performance Optimization
 
-Basic rate limiting implemented:
+Implemented Optimizations:
 
-* 10 requests per minute
-* Prevents API abuse
+• Redis caching
+• Reduced retrieval chunks
+• Streaming responses
+• Parallel pipeline execution
 
 ---
 
@@ -261,12 +302,14 @@ Basic rate limiting implemented:
 
 project/
 
-document.py
-chunk.py
-embedding.py
-vector_store.py
-rag_pipeline.py
 main.py
+rag_pipeline.py
+vector_store.py
+embedding.py
+chunk.py
+document.py
+cache.py
+streamlit_app.py
 requirements.txt
 .env
 README.md
@@ -277,131 +320,77 @@ README.md
 
 ## Clone Repository
 
-## Clone Repository
-
+```
 git clone https://github.com/k-dinakaran/simple-rag.git
-
 cd simple-rag
+```
 
 ---
 
 ## Create Virtual Environment
 
+```
 python -m venv venv
+```
 
 Activate:
 
 Windows:
 
+```
 venv\Scripts\activate
+```
 
 Mac/Linux:
 
+```
 source venv/bin/activate
+```
 
 ---
 
 ## Install Dependencies
 
+```
 pip install -r requirements.txt
+```
 
 ---
 
-## Create .env file
+## Create .env File
 
 Create `.env`
 
 Add:
 
+```
 GEMINI_API_KEY=your_api_key
+```
 
 ---
 
 # Run Application
 
+Backend:
+
+```
 uvicorn main:app --reload
+```
 
-Server runs at:
+Streamlit Dashboard:
 
-http://127.0.0.1:8000
-
-Swagger UI:
-
-http://127.0.0.1:8000/docs
+```
+streamlit run streamlit_app.py
+```
 
 ---
-
-## API Endpoints
-
-* **POST `/upload`**
-  Upload document
-* **POST `/query`**
-  Ask question
-* **GET `/health`**
-  Health check
-
 
 # Example Workflow
 
 1. Upload Document
-
-POST /upload
-
 2. Ask Question
-
-POST /query
-
-3. Get Answer
-
-System retrieves relevant chunks and generates answer
-
----
-
-# Evaluation Criteria Coverage
-
-Chunking Strategy
-
-* Semantic chunking implemented
-* Chunk size justification provided
-
-Retrieval Quality
-
-* Vector search implemented
-* Reranking added
-
-API Design
-
-* Clean FastAPI endpoints
-* Background ingestion
-
-Metrics Awareness
-
-* Latency tracking added
-
-System Explanation Clarity
-
-* Clear architecture provided
-
----
-
-# Retrieval Failure Case
-
-Example:
-
-Query:
-"What is salary structure?"
-
-Failure Reason:
-
-Document did not contain salary information.
-
-System retrieved irrelevant chunks.
-
-Solution:
-
-* Improve chunking
-* Improve reranking
-* Add more documents
+3. View Streaming Answer
+4. Inspect Metrics
 
 ---
 
@@ -409,31 +398,52 @@ Solution:
 
 Typical Latency:
 
-Embedding: 0.02s
-Retrieval: 0.01s
-Reranking: 0.03s
-Generation: 1–3s
+Embedding: 0.2s
+Retrieval: 0.1s
+Generation: 2‑4s
 
-Total: ~1.2s
+Cache Hit Latency:
+
+~50‑150ms
 
 ---
 
 # Future Improvements
 
-* Add hybrid search (BM25 + Vector)
-* Add caching
-* Add multi-document support
-* Add UI
+• Hybrid search (BM25 + Vector)
+• Multi‑document retrieval
+• Multi‑tenant architecture
+• Distributed vector store
+• Authentication
 
 ---
 
 # Tech Stack
 
-FastAPI
-ChromaDB
-Sentence Transformers
-Gemini 2.5 Flash
-Python
+• FastAPI
+• Streamlit
+• ChromaDB
+• Redis
+• Sentence Transformers
+• Gemini 2.5 Flash
+• Python
+
+---
+
+# Production Features Implemented
+
+• Redis caching
+• Streaming responses
+• Observability logs
+• Latency tracking
+• Background ingestion
+• Clean API design
+
+---
+
+# License
+
+MIT License
 
 ---
 
@@ -441,5 +451,4 @@ Python
 
 -K.Dinakaran
 
-RAG Document Question Answering System Built for Technical Evaluation.
----
+Enterprise RAG System

@@ -9,3 +9,6 @@ numpy
 google-generativeai
 pypdf
 python-dotenv
+redis
+streamlit
+requests
