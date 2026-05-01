@@ -321,7 +321,7 @@ README.md
 ## Clone Repository
 
 ```
-git clone https://github.com/k-dinakaran/simple-rag.git
+git clone https://github.com/k-dinakaran/production-grade-rag-system-.git
 cd simple-rag
 ```
 
